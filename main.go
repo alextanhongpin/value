@@ -37,6 +37,15 @@ func Must[T any](v *Value[T], err error) *Value[T] {
 	return v
 }
 
+type optional interface {
+	IsZero() bool
+	Valid() bool
+}
+
+func Optional[T optional](t T) bool {
+	return t.IsZero() || t.Valid()
+}
+
 func New[T any](t T, options ...Option[T]) (*Value[T], error) {
 	val := &Value[T]{
 		value:     t,

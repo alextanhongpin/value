@@ -14,43 +14,44 @@ func ValidateChannelRange(n int) error {
 	if n < 0 || n > 255 {
 		return ErrChannelOutOfRange
 	}
+
 	return nil
 }
 
-func ValidateRGBTuple(rgb rgbTuple) error {
-	if err := ValidateChannelRange(rgb.r); err != nil {
+func ValidateRGBTuple(rgb RGBTuple) error {
+	if err := ValidateChannelRange(rgb.R); err != nil {
 		return err
 	}
-	if err := ValidateChannelRange(rgb.g); err != nil {
+
+	if err := ValidateChannelRange(rgb.G); err != nil {
 		return err
 	}
-	if err := ValidateChannelRange(rgb.b); err != nil {
+
+	if err := ValidateChannelRange(rgb.B); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-type rgbTuple struct {
-	r int
-	g int
-	b int
+type RGBTuple struct {
+	R int
+	G int
+	B int
 }
 
-func (rgb rgbTuple) R() int { return rgb.r }
-func (rgb rgbTuple) G() int { return rgb.g }
-func (rgb rgbTuple) B() int { return rgb.b }
-
-func (rgb rgbTuple) String() string {
-	return fmt.Sprintf("rgb(%d, %d, %d)", rgb.r, rgb.g, rgb.b)
+func (rgb RGBTuple) String() string {
+	return fmt.Sprintf("rgb(%d, %d, %d)", rgb.R, rgb.G, rgb.B)
 }
 
 type RGB struct {
-	value.Value[rgbTuple]
+	value.Value[RGBTuple]
 }
 
 func NewRGB(r, g, b int) (*RGB, error) {
-	val, _ := value.New(rgbTuple{r, g, b}, value.WithValidator(ValidateRGBTuple))
+	val := value.Must(value.New(RGBTuple{r, g, b}, value.WithValidator(ValidateRGBTuple)))
 	rgb := &RGB{*val}
+
 	return rgb, rgb.Validate()
 }
 
@@ -70,7 +71,9 @@ func (r RGB) String() string {
 	if !r.Valid() {
 		return "INVALID RGB"
 	}
+
 	rgb := r.MustGet()
+
 	return rgb.String()
 }
 

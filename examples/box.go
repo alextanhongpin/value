@@ -1,16 +1,13 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/alextanhongpin/value"
+	"github.com/alextanhongpin/value/examples/box"
 )
 
-// NOTE: In short, don't use embedding. Keeping the code clean takes priority over embedding.
 func main() {
-	//var dim *Dimension
-	dim, err := NewDimension(100, "cm")
+	dim, err := box.NewDimension(100, "mm")
 	if err != nil {
 		panic(err)
 	}
@@ -21,100 +18,9 @@ func main() {
 	fmt.Println("valid:", dim.Valid())
 	fmt.Println("validate:", dim.Validate())
 	fmt.Println(dim)
-}
 
-var ErrUnitNotFound = errors.New("unit not found")
-
-func ValidateUnit(v string) error {
-	for _, m := range []string{"mm", "cm", "m"} {
-		if m == v {
-			return nil
-		}
+	if err := dim.Set(box.NewDimensionTuple(250, "cm")); err != nil {
+		panic(err)
 	}
-	return ErrUnitNotFound
-}
-
-//type Unit value.Value[string] // This does not have embedded methods.
-type Unit struct {
-	value.Value[string]
-}
-
-func NewUnit(unit string) (*Unit, error) {
-	val, err := value.New(unit, value.WithValidator(ValidateUnit))
-	if err != nil {
-		return nil, err
-	}
-	res := Unit{*val}
-	return &res, nil
-}
-
-type dimensionTuple struct {
-	Unit  Unit
-	Value value.Value[int] // Should allow only positive values.
-}
-
-func (v dimensionTuple) String() string {
-	return fmt.Sprintf("%s%s", v.Value.String(), v.Unit.String())
-}
-
-func ValidateDimensionTuple(dim dimensionTuple) error {
-	return AnyError(dim.Unit.Validate, dim.Value.Validate)
-}
-
-type Dimension struct {
-	value.Value[dimensionTuple]
-}
-
-func (d *Dimension) Validate() error {
-	if d == nil {
-		return value.ErrNotSet
-	}
-	return d.Value.Validate()
-}
-
-func (d *Dimension) IsZero() bool {
-	return d == nil || d.Value.IsZero()
-}
-
-func (d *Dimension) IsSet() bool {
-	return !d.IsZero() && d.Value.IsSet()
-}
-
-func (d *Dimension) Valid() bool {
-	return d.Validate() == nil
-}
-
-func (d Dimension) String() string {
-	if d.IsZero() {
-		return "NOT SET"
-	}
-	v, _ := d.Get()
-	return v.String()
-}
-
-func NewDimension(val int, unit string) (*Dimension, error) {
-	u, err := NewUnit(unit)
-	if err != nil {
-		return nil, err
-	}
-	v, err := value.New(val)
-	if err != nil {
-		return nil, err
-	}
-
-	dim, err := value.New(dimensionTuple{Unit: *u, Value: *v}, value.WithValidator(ValidateDimensionTuple))
-	if err != nil {
-		return nil, err
-	}
-
-	return &Dimension{*dim}, nil
-}
-
-func AnyError(errFns ...func() error) error {
-	for _, fn := range errFns {
-		if err := fn(); err != nil {
-			return err
-		}
-	}
-	return nil
+	fmt.Println(dim)
 }
