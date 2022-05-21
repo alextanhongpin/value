@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 
-	"github.com/alextanhongpin/value"
 	"github.com/alextanhongpin/value/examples/box"
 )
 
@@ -25,11 +24,7 @@ func main() {
 	}
 	fmt.Println(dim)
 
-	b, err := box.New(&box.Shape{
-		Length: value.MustDeref(box.NewDimension(10, box.UnitCM)),
-		Width:  value.MustDeref(box.NewDimension(11, box.UnitCM)),
-		Height: value.MustDeref(box.NewDimension(12, box.UnitCM)),
-	})
+	b, err := box.New(box.NewShape(11, 12, 13, box.UnitCM))
 	if err != nil {
 		panic(err)
 	}

@@ -18,6 +18,14 @@ type Shape struct {
 	Height Dimension
 }
 
+func NewShape(length, width, height uint, unit Unit) *Shape {
+	return &Shape{
+		Length: value.MustDeref(NewDimension(length, unit)),
+		Width:  value.MustDeref(NewDimension(width, unit)),
+		Height: value.MustDeref(NewDimension(height, unit)),
+	}
+}
+
 func (s Shape) String() string {
 	return fmt.Sprintf("%s x %s x %s", s.Length.String(), s.Width.String(), s.Height.String())
 }
@@ -54,8 +62,11 @@ type Box struct {
 	value.Value[*Shape]
 }
 
-func New(dim *Shape) (*Box, error) {
-	val, _ := value.New(dim, value.WithValidator(ValidateBoxDimension))
+func New(shape *Shape) (*Box, error) {
+	val, _ := value.New(
+		shape,
+		value.WithValidator(ValidateBoxDimension),
+	)
 	box := &Box{*val}
 
 	return box, box.Validate()
