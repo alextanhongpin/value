@@ -29,12 +29,44 @@ func WithValidator[T any](validator func(T) error) Option[T] {
 	}
 }
 
-func Must[T any](v *Value[T], err error) *Value[T] {
+func Must[T any](t T, err error) T {
 	if err != nil {
 		panic(err)
 	}
 
-	return v
+	return t
+}
+
+type validatable interface {
+	Validate() error
+}
+
+func Validate[T validatable](vals ...T) error {
+	for _, val := range vals {
+		if err := val.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func MustDeref[T any](t *T, err error) T {
+	if err != nil {
+		return Deref(new(T))
+	}
+
+	return Deref(t)
+}
+
+func Deref[T any](t *T) T {
+	if t == nil {
+		var t T
+
+		return t
+	}
+
+	return *t
 }
 
 type optional interface {

@@ -46,10 +46,10 @@ type Dimension struct {
 }
 
 func NewDimension(val uint, unit Unit) (*Dimension, error) {
-	tup := value.Must(value.New(&DimensionTuple{
+	tup, _ := value.New(&DimensionTuple{
 		Value: *value.Must(value.New(val)),
 		Unit:  unit,
-	}, value.WithValidator(ValidateDimensionTuple)))
+	}, value.WithValidator(ValidateDimensionTuple))
 
 	dim := &Dimension{*tup}
 
