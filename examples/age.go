@@ -54,6 +54,12 @@ func main() {
 	fmt.Println("john", john)
 	fmt.Println("age valid", john.Age.Valid())
 	fmt.Println(john.Errors())
+
+	// Unfortunately embedding the value object doesn't help much.
+	// We still need to check all nil values, which makes no difference
+	// then implementing each value object individually.
+	var age2 *Age
+	fmt.Println(age2.Valid())
 }
 
 type User struct {

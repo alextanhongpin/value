@@ -4,6 +4,7 @@ import "github.com/alextanhongpin/value"
 import "errors"
 import "fmt"
 
+// NOTE: In short, don't use embedding. Keeping the code clean takes priority over embedding.
 func main() {
 	//var dim *Dimension
 	dim, err := NewDimension(100, "cm")
@@ -28,7 +29,6 @@ func ValidateUnit(v string) error {
 		}
 	}
 	return ErrUnitNotFound
-
 }
 
 //type Unit value.Value[string] // This does not have embedded methods.
@@ -60,6 +60,28 @@ func ValidateDimensionValue(dim DimensionValue) error {
 
 type Dimension struct {
 	value.Value[DimensionValue]
+}
+
+func (d *Dimension) Validate() error {
+	if d == nil {
+		return value.ErrNotSet
+	}
+	return d.Value.Validate()
+}
+
+func (d *Dimension) IsZero() bool {
+	return d == nil || d.Value.IsZero()
+}
+
+func (d *Dimension) IsSet() bool {
+	return !d.IsZero() && d.Value.IsSet()
+}
+
+func (d *Dimension) Valid() bool {
+	if d == nil {
+		return false
+	}
+	return d.Value.Valid()
 }
 
 func (d Dimension) String() string {

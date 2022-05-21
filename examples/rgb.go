@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	var rgbValue RGBValue
+	var rgbValue Channel
 	if err := json.Unmarshal([]byte("200"), &rgbValue); err != nil {
 		panic(err)
 	}
@@ -24,31 +24,59 @@ func main() {
 	fmt.Println(rgb)
 	fmt.Println(rgb.Valid())
 	fmt.Println(rgb.Validate())
+
+	var rgb2 *RGB
+	if !rgb2.Valid() {
+		rgb, err := NewRGB(255, 255, 255)
+		if err != nil {
+			panic(err)
+		}
+		rgb2 = rgb
+	}
+	if err := rgb2.R.Set(100); err != nil {
+		panic(err)
+	}
+	fmt.Println(rgb2.Valid())
+	fmt.Println(rgb2)
 }
 
-var ErrRGBValueOutOfRange = fmt.Errorf("%w: rgb must be between 0 and 255", value.ErrInvalidValue)
+var ErrChannelOutOfRange = fmt.Errorf("%w: rgb must be between 0 and 255", value.ErrInvalidValue)
 
-func ValidateRGBValueRange(n int) error {
+func ValidateChannelRange(n int) error {
 	if n < 0 || n > 255 {
-		return ErrRGBValueOutOfRange
+		return ErrChannelOutOfRange
 	}
 	return nil
 }
 
-type RGBValue struct {
+type Channel struct {
 	value.Value[int]
 }
 
-func NewRGBValue(rgb int) (*RGBValue, error) {
-	value, err := value.New(rgb, value.WithValidator(ValidateRGBValueRange))
+func NewChannel(rgb int) (*Channel, error) {
+	value, err := value.New(rgb, value.WithValidator(ValidateChannelRange))
 	if err != nil {
 		return nil, err
 	}
 
-	return &RGBValue{*value}, nil
+	return &Channel{*value}, nil
 }
 
-func (r *RGBValue) UnmarshalJSON(raw []byte) error {
+func (r *Channel) Validate() error {
+	if r == nil {
+		return value.ErrNotSet
+	}
+	return r.Value.Validate()
+}
+
+func (r *Channel) Valid() bool {
+	if r == nil {
+		return false
+	}
+	return r.Value.Valid()
+}
+
+func (r *Channel) UnmarshalJSON(raw []byte) error {
 	if bytes.Equal(raw, []byte("null")) {
 		return nil
 	}
@@ -57,27 +85,27 @@ func (r *RGBValue) UnmarshalJSON(raw []byte) error {
 	if err := json.Unmarshal(raw, v); err != nil {
 		return err
 	}
-	v.SetValidator(ValidateRGBValueRange)
+	v.SetValidator(ValidateChannelRange)
 	r.Value = *v
 	return nil
 }
 
 type RGB struct {
-	R *RGBValue
-	G *RGBValue
-	B *RGBValue
+	R *Channel
+	G *Channel
+	B *Channel
 }
 
 func NewRGB(r, g, b int) (*RGB, error) {
-	rv, err := NewRGBValue(r)
+	rv, err := NewChannel(r)
 	if err != nil {
 		return nil, err
 	}
-	gv, err := NewRGBValue(g)
+	gv, err := NewChannel(g)
 	if err != nil {
 		return nil, err
 	}
-	bv, err := NewRGBValue(b)
+	bv, err := NewChannel(b)
 	if err != nil {
 		return nil, err
 	}
@@ -89,10 +117,16 @@ func NewRGB(r, g, b int) (*RGB, error) {
 }
 
 func (r *RGB) Validate() error {
+	if r == nil {
+		return value.ErrNotSet
+	}
 	return AnyError(r.R.Validate, r.R.Validate, r.B.Validate)
 }
 
 func (r *RGB) Valid() bool {
+	if r == nil {
+		return false
+	}
 	return AllTrue(r.R.Valid, r.G.Valid, r.B.Valid)
 }
 
