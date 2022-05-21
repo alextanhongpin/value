@@ -1,8 +1,11 @@
 package main
 
-import "github.com/alextanhongpin/value"
-import "errors"
-import "fmt"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/alextanhongpin/value"
+)
 
 // NOTE: In short, don't use embedding. Keeping the code clean takes priority over embedding.
 func main() {
@@ -45,21 +48,21 @@ func NewUnit(unit string) (*Unit, error) {
 	return &res, nil
 }
 
-type DimensionValue struct {
+type dimensionTuple struct {
 	Unit  Unit
 	Value value.Value[int] // Should allow only positive values.
 }
 
-func (v DimensionValue) String() string {
+func (v dimensionTuple) String() string {
 	return fmt.Sprintf("%s%s", v.Value.String(), v.Unit.String())
 }
 
-func ValidateDimensionValue(dim DimensionValue) error {
+func ValidateDimensionTuple(dim dimensionTuple) error {
 	return AnyError(dim.Unit.Validate, dim.Value.Validate)
 }
 
 type Dimension struct {
-	value.Value[DimensionValue]
+	value.Value[dimensionTuple]
 }
 
 func (d *Dimension) Validate() error {
@@ -78,10 +81,7 @@ func (d *Dimension) IsSet() bool {
 }
 
 func (d *Dimension) Valid() bool {
-	if d == nil {
-		return false
-	}
-	return d.Value.Valid()
+	return d.Validate() == nil
 }
 
 func (d Dimension) String() string {
@@ -102,7 +102,7 @@ func NewDimension(val int, unit string) (*Dimension, error) {
 		return nil, err
 	}
 
-	dim, err := value.New(DimensionValue{Unit: *u, Value: *v}, value.WithValidator(ValidateDimensionValue))
+	dim, err := value.New(dimensionTuple{Unit: *u, Value: *v}, value.WithValidator(ValidateDimensionTuple))
 	if err != nil {
 		return nil, err
 	}

@@ -48,6 +48,7 @@ func New[T any](t T, options ...Option[T]) (*Value[T], error) {
 		opt(val)
 	}
 
+	// Allow returning invalid value object, to allow deferred validation.
 	return val, val.Validate()
 }
 
@@ -151,6 +152,6 @@ func (v *Value[T]) UnmarshalJSON(raw []byte) error {
 		return err
 	}
 
-	*v = *Must(New(t))
+	*v = *Must(New(t, WithValidator(v.validator)))
 	return nil
 }

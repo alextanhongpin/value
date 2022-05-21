@@ -70,24 +70,7 @@ func (r *Channel) Validate() error {
 }
 
 func (r *Channel) Valid() bool {
-	if r == nil {
-		return false
-	}
-	return r.Value.Valid()
-}
-
-func (r *Channel) UnmarshalJSON(raw []byte) error {
-	if bytes.Equal(raw, []byte("null")) {
-		return nil
-	}
-
-	v := new(value.Value[int])
-	if err := json.Unmarshal(raw, v); err != nil {
-		return err
-	}
-	v.SetValidator(ValidateChannelRange)
-	r.Value = *v
-	return nil
+	return r.Validate() == nil
 }
 
 type RGB struct {
@@ -97,23 +80,15 @@ type RGB struct {
 }
 
 func NewRGB(r, g, b int) (*RGB, error) {
-	rv, err := NewChannel(r)
-	if err != nil {
-		return nil, err
-	}
-	gv, err := NewChannel(g)
-	if err != nil {
-		return nil, err
-	}
-	bv, err := NewChannel(b)
-	if err != nil {
-		return nil, err
-	}
-	return &RGB{
+	rv, _ := NewChannel(r)
+	gv, _ := NewChannel(g)
+	bv, _ := NewChannel(b)
+	rgb := &RGB{
 		R: rv,
 		G: gv,
 		B: bv,
-	}, nil
+	}
+	return rgb, rgb.Validate()
 }
 
 func (r *RGB) Validate() error {

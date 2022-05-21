@@ -13,13 +13,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(age.Valid())
-	fmt.Println(age.IsZero())
-	fmt.Println(age.Validate())
-	fmt.Println(age.Set(-10))
-	fmt.Println(age.Get())
-	fmt.Println(age.MustGet())
-	fmt.Println(age)
+	fmt.Println("valid:", age.Valid())
+	fmt.Println("iszero:", age.IsZero())
+	fmt.Println("validate:", age.Validate())
+	fmt.Println("set:", age.Set(-10))
+	fmt.Println("get:", age.MustGet())
+	fmt.Println("mustGet:", age.MustGet())
+	fmt.Println("age:", age)
 
 	b, err := json.Marshal(age)
 	if err != nil {
@@ -76,42 +76,39 @@ func (u *User) Errors() map[string]error {
 	}
 }
 
+var ErrInvalidAgeRange = fmt.Errorf("%w: invalid age", value.ErrInvalidValue)
+
 // Age value object.
 type Age struct {
 	// *Value[int] Don't use pointer, there will be issue with unmarshalling
 	value.Value[int]
 }
 
-func (a *Age) UnmarshalJSON(raw []byte) error {
-	if a == nil {
-		// TODO
-	}
-	var v value.Value[int]
-	if err := json.Unmarshal(raw, &v); err != nil {
-		return err
-	}
-	// Set back the age validator manually here.
-	v.SetValidator(ValidateAge)
-	a.Value = v
-
-	// Additionally perform validation here
-	//return a.Validate()
-	return nil
-}
-
-var ErrInvalidAgeRange = fmt.Errorf("%w: invalid age", value.ErrInvalidValue)
-
-func ValidateAge(age int) error {
-	if age < 0 {
-		return ErrInvalidAgeRange
-	}
-	return nil
-
-}
 func NewAge(age int) (*Age, error) {
 	value, err := value.New(age, value.WithValidator(ValidateAge))
 	if err != nil {
 		return nil, err
 	}
 	return &Age{*value}, nil
+}
+
+// This guards against nil pointer, e.g.
+// var a *Age
+// a.Validate() // panics
+func (a *Age) Validate() error {
+	if a == nil {
+		return value.ErrNotSet
+	}
+	return a.Value.Validate()
+}
+
+func (a *Age) Valid() bool {
+	return a.Validate() == nil
+}
+
+func ValidateAge(age int) error {
+	if age < 0 {
+		return ErrInvalidAgeRange
+	}
+	return nil
 }
