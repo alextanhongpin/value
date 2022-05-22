@@ -3,79 +3,58 @@ package colors
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
-
-	"github.com/alextanhongpin/value"
 )
 
-var ErrChannelOutOfRange = fmt.Errorf("%w: rgb must be between 0 and 255", value.ErrInvalidValue)
+var ErrChannelOutOfRange = errors.New("channel out of range")
 
-func ValidateChannelRange(n int) error {
-	if n < 0 || n > 255 {
+type RGB struct {
+	_       struct{}
+	R, G, B int
+}
+
+func NewRGB(r, g, b int) *RGB {
+	return &RGB{
+		R: r,
+		G: g,
+		B: b,
+	}
+}
+
+func (rgb *RGB) validateChannel(channel int) error {
+	if channel < 0 || channel > 255 {
 		return ErrChannelOutOfRange
 	}
 
 	return nil
 }
 
-func ValidateRGBTuple(rgb RGBTuple) error {
-	if err := ValidateChannelRange(rgb.R); err != nil {
-		return err
+func (rgb *RGB) Validate() error {
+	if err := rgb.validateChannel(rgb.R); err != nil {
+		return fmt.Errorf("%w: R", err)
 	}
 
-	if err := ValidateChannelRange(rgb.G); err != nil {
-		return err
+	if err := rgb.validateChannel(rgb.G); err != nil {
+		return fmt.Errorf("%w: G", err)
 	}
 
-	if err := ValidateChannelRange(rgb.B); err != nil {
-		return err
+	if err := rgb.validateChannel(rgb.B); err != nil {
+		return fmt.Errorf("%w: B", err)
 	}
 
 	return nil
 }
 
-type RGBTuple struct {
-	R int
-	G int
-	B int
-}
-
-func (rgb RGBTuple) String() string {
-	return fmt.Sprintf("rgb(%d, %d, %d)", rgb.R, rgb.G, rgb.B)
-}
-
-type RGB struct {
-	// Ideally avoid embedding pointer, as you have to initialize both the RGB struct as well as the embedded struct.
-	value.Value[RGBTuple]
-}
-
-func NewRGB(r, g, b int) (*RGB, error) {
-	val, _ := value.New(RGBTuple{r, g, b}, value.WithValidator(ValidateRGBTuple))
-	rgb := &RGB{*val}
-
-	return rgb, rgb.Validate()
-}
-
-func (r *RGB) Validate() error {
-	if r == nil {
-		return value.ErrNotSet
-	}
-
-	return r.Value.Validate()
-}
-
-func (r *RGB) Valid() bool {
-	return r.Validate() == nil
-}
-
 func (r RGB) String() string {
-	if !r.Valid() {
-		return "INVALID RGB"
-	}
+	return fmt.Sprintf("rgb(%d, %d, %d)", r.R, r.G, r.B)
+}
 
-	rgb := r.MustGet()
-
-	return rgb.String()
+func (r RGB) Equals(other RGB) bool {
+	return true &&
+		r.R == other.R &&
+		r.G == other.G &&
+		r.B == other.B
 }
 
 func (r RGB) MarshalJSON() ([]byte, error) {
@@ -98,11 +77,6 @@ func (r *RGB) UnmarshalJSON(raw []byte) error {
 		return err
 	}
 
-	r2, err := NewRGB(ri, gi, bi)
-	if err != nil {
-		return err
-	}
-
-	*r = *r2
+	*r = *NewRGB(ri, gi, bi)
 	return nil
 }

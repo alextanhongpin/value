@@ -3,34 +3,41 @@ package main
 import (
 	"fmt"
 
+	"github.com/alextanhongpin/value"
 	"github.com/alextanhongpin/value/examples/box"
 )
 
+func calculateBoxVolume(boxContainer value.ToValidate[*box.Box]) (volume value.ToValidate[*box.Dimension]) {
+	box, err := boxContainer.Validate()
+	if err != nil {
+		return
+	}
+
+	return value.Validate(box.Volume())
+}
+
+type Cargo struct {
+	box value.Object[*box.Box]
+}
+
 func main() {
-	dim, err := box.NewDimension(100, box.UnitMM)
+	dim := box.New(
+		box.NewDimension(10, box.UnitCM),
+		box.NewDimension(11, box.UnitCM),
+		box.NewDimension(12, box.UnitCM),
+	)
+
+	volume := calculateBoxVolume(value.Validate(dim))
+	vol, err := volume.Validate()
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(dim.String())
-	fmt.Println(dim.Get())
-	fmt.Println("isZero:", dim.IsZero())
-	fmt.Println("isSet:", dim.IsSet())
-	fmt.Println("valid:", dim.Valid())
-	fmt.Println("validate:", dim.Validate())
-	fmt.Println(dim)
+	fmt.Println(vol)
 
-	if err := dim.Set(box.NewDimensionTuple(250, box.UnitCM)); err != nil {
-		panic(err)
-	}
-	fmt.Println(dim)
-
-	b, err := box.New(box.NewShape(11, 12, 13, box.UnitCM))
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(b.Volume())
-	fmt.Println(b)
-	fmt.Println(b.Valid())
-	fmt.Println(b.Validate())
+	cargo := &Cargo{}
+	fmt.Println("is cargo box present?", !cargo.box.IsZero())
+	fmt.Println("is cargo box valid?", cargo.box.Valid())
+	cargo.box.Set(dim)
+	fmt.Println("is cargo box present?", !cargo.box.IsZero())
+	fmt.Println("is cargo box valid?", cargo.box.Valid())
 }

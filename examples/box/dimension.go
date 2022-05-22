@@ -2,56 +2,30 @@ package box
 
 import (
 	"errors"
-	"fmt"
-
-	"github.com/alextanhongpin/value"
 )
 
-var ErrEmptyDimension = errors.New("empty dimension")
+var ErrDimensionNotSet = errors.New("dimension not set")
 
-type DimensionTuple struct {
+type Dimension struct {
 	Unit  Unit
-	Value value.Value[uint]
+	Value uint
 }
 
-func NewDimensionTuple(val uint, unit Unit) *DimensionTuple {
-	return &DimensionTuple{
-		Value: *value.Must(value.New(val)),
+func NewDimension(value uint, unit Unit) *Dimension {
+	return &Dimension{
 		Unit:  unit,
+		Value: value,
 	}
 }
 
-func (tup DimensionTuple) String() string {
-	return fmt.Sprintf("%s%s", tup.Value.String(), tup.Unit)
-}
-
-func ValidateDimensionTuple(tuple *DimensionTuple) error {
-	if tuple == nil {
-		return ErrEmptyDimension
+func (d *Dimension) Validate() error {
+	if d == nil {
+		return ErrDimensionNotSet
 	}
 
-	if err := tuple.Unit.Validate(); err != nil {
-		return err
-	}
-
-	if err := tuple.Value.Validate(); err != nil {
+	if err := d.Unit.Validate(); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-type Dimension struct {
-	value.Value[*DimensionTuple]
-}
-
-func NewDimension(val uint, unit Unit) (*Dimension, error) {
-	tup, _ := value.New(&DimensionTuple{
-		Value: *value.Must(value.New(val)),
-		Unit:  unit,
-	}, value.WithValidator(ValidateDimensionTuple))
-
-	dim := &Dimension{*tup}
-
-	return dim, dim.Validate()
 }

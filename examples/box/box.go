@@ -3,73 +3,25 @@ package box
 import (
 	"errors"
 	"fmt"
-
-	"github.com/alextanhongpin/value"
 )
 
 var (
-	ErrInconsistentBoxDimension = errors.New("inconsistent box dimension")
 	ErrNoBox                    = errors.New("no box")
+	ErrInconsistentBoxDimension = errors.New("inconsistent box dimension")
 )
 
-type Shape struct {
-	Length Dimension
-	Width  Dimension
-	Height Dimension
-}
-
-func NewShape(length, width, height uint, unit Unit) *Shape {
-	return &Shape{
-		Length: value.MustDeref(NewDimension(length, unit)),
-		Width:  value.MustDeref(NewDimension(width, unit)),
-		Height: value.MustDeref(NewDimension(height, unit)),
-	}
-}
-
-func (s Shape) String() string {
-	return fmt.Sprintf("%s x %s x %s", s.Length.String(), s.Width.String(), s.Height.String())
-}
-
-func ValidateBoxDimension(shape *Shape) error {
-	if shape == nil {
-		return ErrEmptyDimension
-	}
-
-	if err := shape.Length.Validate(); err != nil {
-		return err
-	}
-
-	if err := shape.Width.Validate(); err != nil {
-		return err
-	}
-
-	if err := shape.Height.Validate(); err != nil {
-		return err
-	}
-
-	length := shape.Length.MustGet()
-	width := shape.Width.MustGet()
-	height := shape.Height.MustGet()
-
-	if length.Unit != width.Unit && width.Unit != height.Unit {
-		return ErrInconsistentBoxDimension
-	}
-
-	return nil
-}
-
 type Box struct {
-	value.Value[*Shape]
+	Length *Dimension
+	Width  *Dimension
+	Height *Dimension
 }
 
-func New(shape *Shape) (*Box, error) {
-	val, _ := value.New(
-		shape,
-		value.WithValidator(ValidateBoxDimension),
-	)
-	box := &Box{*val}
-
-	return box, box.Validate()
+func New(length, width, height *Dimension) *Box {
+	return &Box{
+		Length: length,
+		Width:  width,
+		Height: height,
+	}
 }
 
 func (b *Box) Validate() error {
@@ -77,22 +29,53 @@ func (b *Box) Validate() error {
 		return ErrNoBox
 	}
 
-	return b.Value.Validate()
+	if b.Length == nil {
+		return fmt.Errorf("%w: box length", ErrDimensionNotSet)
+	}
+
+	if err := b.Length.Validate(); err != nil {
+		return fmt.Errorf("%w: box length", err)
+	}
+
+	if b.Width == nil {
+		return fmt.Errorf("%w: box width", ErrDimensionNotSet)
+	}
+
+	if err := b.Width.Validate(); err != nil {
+		return fmt.Errorf("%w: box width", err)
+	}
+
+	if b.Height == nil {
+		return fmt.Errorf("%w: box height", ErrDimensionNotSet)
+	}
+
+	if err := b.Height.Validate(); err != nil {
+		return fmt.Errorf("%w: box height", err)
+	}
+
+	units := make(map[Unit]int)
+	units[b.Length.Unit]++
+	units[b.Height.Unit]++
+	units[b.Width.Unit]++
+	if len(units) != 1 && units[b.Length.Unit] != 3 {
+		return ErrInconsistentBoxDimension
+	}
+
+	return nil
 }
 
 func (b *Box) Valid() bool {
 	return b.Validate() == nil
 }
 
-func (b *Box) Volume() (*Dimension, error) {
-	if err := b.Validate(); err != nil {
-		return nil, err
+func (b *Box) Volume() *Dimension {
+	if !b.Valid() {
+		return nil
 	}
 
-	dim := b.MustGet()
-	length := dim.Length.MustGet().Value.MustGet()
-	width := dim.Width.MustGet().Value.MustGet()
-	height := dim.Height.MustGet().Value.MustGet()
+	length, unit := b.Length.Value, b.Length.Unit
+	width := b.Width.Value
+	height := b.Height.Value
 
-	return NewDimension(length*width*height, dim.Length.MustGet().Unit)
+	return NewDimension(length*width*height, unit)
 }

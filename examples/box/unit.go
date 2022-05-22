@@ -30,7 +30,3 @@ func (u *Unit) Validate() error {
 		return nil
 	}
 }
-
-func (u *Unit) Valid() bool {
-	return u.Validate() == nil
-}
