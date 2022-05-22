@@ -45,11 +45,12 @@ func (rgb RGBTuple) String() string {
 }
 
 type RGB struct {
+	// Ideally avoid embedding pointer, as you have to initialize both the RGB struct as well as the embedded struct.
 	value.Value[RGBTuple]
 }
 
 func NewRGB(r, g, b int) (*RGB, error) {
-	val := value.Must(value.New(RGBTuple{r, g, b}, value.WithValidator(ValidateRGBTuple)))
+	val, _ := value.New(RGBTuple{r, g, b}, value.WithValidator(ValidateRGBTuple))
 	rgb := &RGB{*val}
 
 	return rgb, rgb.Validate()

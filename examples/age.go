@@ -106,6 +106,16 @@ func (a *Age) Valid() bool {
 	return a.Validate() == nil
 }
 
+func (a *Age) UnmarshalJSON(raw []byte) error {
+	if err := a.Value.UnmarshalJSON(raw); err != nil {
+		return err
+	}
+
+	// Unfortunately the validator has to be added manually.
+	a.Value.SetValidator(ValidateAge)
+	return nil
+}
+
 func ValidateAge(age int) error {
 	if age < 0 {
 		return ErrInvalidAgeRange
