@@ -7,7 +7,10 @@ import (
 	"fmt"
 )
 
-var ErrChannelOutOfRange = errors.New("channel out of range")
+var (
+	ErrNotSet            = errors.New("not set")
+	ErrChannelOutOfRange = errors.New("channel out of range")
+)
 
 type RGB struct {
 	_       struct{}
@@ -31,6 +34,10 @@ func (rgb *RGB) validateChannel(channel int) error {
 }
 
 func (rgb *RGB) Validate() error {
+	if rgb == nil {
+		return ErrNotSet
+	}
+
 	if err := rgb.validateChannel(rgb.R); err != nil {
 		return fmt.Errorf("%w: R", err)
 	}

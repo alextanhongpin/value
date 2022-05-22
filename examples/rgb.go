@@ -9,7 +9,10 @@ import (
 	"github.com/alextanhongpin/value/examples/colors"
 )
 
-var ErrHomePageNotFound = errors.New("homepage not found")
+var (
+	ErrHomePageNotFound    = errors.New("home page not found")
+	ErrProfilePageNotFound = errors.New("profile page not found")
+)
 
 type HomePage struct {
 	Width           int                        `json:"width"`
@@ -27,6 +30,32 @@ func (p *HomePage) Validate() error {
 
 func (p *HomePage) Valid() bool {
 	return p.Validate() == nil
+}
+
+type ProfilePage struct {
+	BackgroundColor *colors.RGB
+	HeaderColor     *colors.RGB
+	FooterColor     *colors.RGB
+}
+
+func (p *ProfilePage) Validate() error {
+	if p == nil {
+		return ErrProfilePageNotFound
+	}
+
+	if err := p.BackgroundColor.Validate(); err != nil {
+		return fmt.Errorf("%w: backgroundColor", err)
+	}
+
+	if err := p.HeaderColor.Validate(); err != nil {
+		return fmt.Errorf("%w: headerColor", err)
+	}
+
+	if err := p.FooterColor.Validate(); err != nil {
+		return fmt.Errorf("%w: footerColor", err)
+	}
+
+	return nil
 }
 
 func main() {
@@ -56,4 +85,17 @@ func main() {
 	fmt.Println(homepage.BackgroundColor.Get())
 	fmt.Println("is homepage background color valid?:", homepage.BackgroundColor.Valid())
 	fmt.Println("is homepage background color optional?", homepage.BackgroundColor.Optional())
+
+	// Constructorless creation, and also deferred validation.
+	// Otherwise, for each field, you would probably have to handle the error one-by-one.
+	profilePageValue := value.Validate(&ProfilePage{
+		BackgroundColor: colors.NewRGB(0, 1, 2),
+		HeaderColor:     colors.NewRGB(3, 4, 5),
+		FooterColor:     colors.NewRGB(6, 7, 8),
+	})
+	profilePage, err := profilePageValue.Validate()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(profilePage)
 }
